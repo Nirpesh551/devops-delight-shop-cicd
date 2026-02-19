@@ -28,9 +28,14 @@ pipeline {
       }
     }
 
+    stage('Test + Coverage') {
+      steps {
+        sh 'npm run test:cov'
+      }
+    }
+
     stage('NPM Audit (non-blocking)') {
       steps {
-        // Fast dependency vulnerability check for Node projects (won't fail pipeline)
         sh 'npm audit --audit-level=high || true'
       }
     }
@@ -39,11 +44,13 @@ pipeline {
       steps {
         script {
           def scannerHome = tool 'sonar-scanner'
+
           withSonarQubeEnv('SonarQube') {
             sh """
               ${scannerHome}/bin/sonar-scanner \
                 -Dsonar.projectKey=devops-delight-shop \
-                -Dsonar.sources=.
+                -Dsonar.sources=. \
+                -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
             """
           }
         }
@@ -68,9 +75,8 @@ pipeline {
 
           docker.withRegistry('', 'docker-hub-creds') {
             def img = docker.build("${fullImage}:${IMAGE_TAG}")
-
-            img.push()          // push build number tag
-            img.push('latest')  // push latest tag
+            img.push()
+            img.push('latest')
           }
         }
       }
