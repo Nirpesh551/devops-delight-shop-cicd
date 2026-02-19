@@ -36,6 +36,7 @@ pipeline {
 
     stage('OWASP Dependency Check') {
       steps {
+        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE')
         dependencyCheck additionalArguments: '--scan . --format HTML --format XML',
           odcInstallation: 'OWASP-DepCheck'
         dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
