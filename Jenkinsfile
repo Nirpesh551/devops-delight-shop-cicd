@@ -15,6 +15,8 @@ pipeline {
     stage('Build & Install') {
       steps {
         echo "Installing dependencies..."
+        sh 'node -v'
+        sh 'npm -v'
         sh 'npm ci || npm install'
       }
     }
@@ -36,11 +38,14 @@ pipeline {
 
     stage('OWASP Dependency Check') {
       steps {
+        // If NVD rate-limits (429) or update fails, mark stage UNSTABLE but don't fail the whole pipeline
         catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-        dependencyCheck additionalArguments: '--scan . --format HTML --format XML',
-          odcInstallation: 'OWASP-DepCheck'
+          dependencyCheck(
+            additionalArguments: '--scan . --format HTML --format XML --data ./dc-data',
+            odcInstallation: 'OWASP-DepCheck'
+          )
+          dependencyCheckPublisher(pattern: '**/dependency-check-report.xml')
         }
-        dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
       }
     }
 
