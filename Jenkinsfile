@@ -1,11 +1,18 @@
 pipeline {
   agent any
 
+  environment {
+    DOCKERHUB_USERNAME = 'hahaha555'
+    APP_NAME          = 'devops-delight-shop'
+    IMAGE_TAG         = "${BUILD_NUMBER}"
+  }
+
   tools {
     nodejs 'node-20-18-2'
   }
 
   stages {
+
     stage('Checkout') {
       steps {
         checkout scm
@@ -23,8 +30,7 @@ pipeline {
 
     stage('NPM Audit (non-blocking)') {
       steps {
-        // Fast dependency vulnerability check for Node projects.
-        // This will NOT fail the pipeline.
+        // Fast dependency vulnerability check for Node projects (won't fail pipeline)
         sh 'npm audit --audit-level=high || true'
       }
     }
@@ -48,6 +54,24 @@ pipeline {
       steps {
         timeout(time: 15, unit: 'MINUTES') {
           waitForQualityGate abortPipeline: true
+        }
+      }
+    }
+
+    stage('Docker Build & Push (main only)') {
+      when {
+        branch 'main'
+      }
+      steps {
+        script {
+          def fullImage = "${DOCKERHUB_USERNAME}/${APP_NAME}"
+
+          docker.withRegistry('', 'docker-hub-creds') {
+            def img = docker.build("${fullImage}:${IMAGE_TAG}")
+
+            img.push()          // push build number tag
+            img.push('latest')  // push latest tag
+          }
         }
       }
     }
