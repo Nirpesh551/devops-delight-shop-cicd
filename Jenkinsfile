@@ -2,6 +2,7 @@ pipeline {
     agent any
     tools {
         nodejs 'node-20-18-2'   
+        dependencyCheck = tool 'OWASP-DepCheck'
     }
 
     stages {
@@ -34,6 +35,13 @@ pipeline {
                     }
                 }
             }
+        }
+
+        stage('OWASP Dependency Check') {
+          steps {
+            dependencyCheck additionalArguments: '--scan . --format HTML --format XML', odcInstallation: 'OWASP-DepCheck'
+            dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+          }
         }
 
         stage('Quality Gate') {
