@@ -38,13 +38,19 @@ pipeline {
 
     stage('OWASP Dependency Check') {
       steps {
-        // If NVD rate-limits (429) or update fails, mark stage UNSTABLE but don't fail the whole pipeline
-        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-          dependencyCheck(
-            additionalArguments: '--scan . --format HTML --format XML --data ./dc-data',
-            odcInstallation: 'OWASP-DepCheck'
-          )
-          dependencyCheckPublisher(pattern: '**/dependency-check-report.xml')
+        script {
+          try {
+            dependencyCheck(
+              additionalArguments: '--scan . --format HTML --format XML --data ./dc-data',
+              odcInstallation: 'OWASP-DepCheck'
+            )
+
+            dependencyCheckPublisher(pattern: '**/dependency-check-report.xml')
+          } catch (err) {
+            // Mark build as UNSTABLE but continue the pipeline
+            currentBuild.result = 'UNSTABLE'
+            echo "OWASP Dependency-Check failed (continuing pipeline). Reason: ${err}"
+          }
         }
       }
     }
