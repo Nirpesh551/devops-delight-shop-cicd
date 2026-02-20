@@ -11,6 +11,11 @@ pipeline {
     nodejs 'node-20-18-2'
   }
 
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+  }
+
   stages {
 
     stage('Checkout') {
@@ -19,24 +24,36 @@ pipeline {
       }
     }
 
-    stage('Build & Install') {
+    stage('Install Dependencies') {
       steps {
         echo "Installing dependencies..."
-        sh 'node -v'
-        sh 'npm -v'
-        sh 'npm ci || npm install'
+        sh '''
+          set -euxo pipefail
+          node -v
+          npm -v
+          npm ci
+        '''
       }
     }
 
     stage('Test + Coverage') {
       steps {
-        sh 'npm run test:cov'
+        sh '''
+          set -euxo pipefail
+          npm run test:cov
+          test -f coverage/lcov.info
+          ls -lah coverage/lcov.info
+        '''
       }
     }
 
     stage('NPM Audit (non-blocking)') {
       steps {
-        sh 'npm audit --audit-level=high || true'
+        sh '''
+          set +e
+          npm audit --audit-level=high
+          exit 0
+        '''
       }
     }
 
@@ -47,10 +64,17 @@ pipeline {
 
           withSonarQubeEnv('SonarQube') {
             sh """
+              set -euxo pipefail
+
               ${scannerHome}/bin/sonar-scanner \
                 -Dsonar.projectKey=devops-delight-shop \
-                -Dsonar.sources=. \
-                -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+                -Dsonar.projectName=devops-delight-shop \
+                -Dsonar.sources=src \
+                -Dsonar.tests=src/test,__tests__ \
+                -Dsonar.test.inclusions=**/*.test.tsx,**/*.test.ts,**/*.test.js \
+                -Dsonar.exclusions=src/test/**,__tests__/** \
+                -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                -Dsonar.coverage.exclusions=src/main.tsx,**/*.config.js,**/*.config.ts,src/components/ui/**,src/integrations/**
             """
           }
         }
@@ -82,5 +106,11 @@ pipeline {
       }
     }
   }
-}
 
+  post {
+    always {
+      echo "Build completed: ${currentBuild.currentResult}"
+      archiveArtifacts artifacts: 'coverage/**', allowEmptyArchive: true
+    }
+  }
+}
