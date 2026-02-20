@@ -105,7 +105,7 @@ describe("ProductCard", () => {
     renderProductCard({
       id: "p9",
       name: "Helm Cap",
-      price: 29.0,
+      price: 29,
     });
 
     const addBtn = screen.getByRole("button", { name: /add/i });
@@ -115,7 +115,7 @@ describe("ProductCard", () => {
     expect(addItemMock).toHaveBeenCalledWith({
       id: "p9",
       name: "Helm Cap",
-      price: 29.0,
+      price: 29,
       image: "/mock-image.png",
     });
 
