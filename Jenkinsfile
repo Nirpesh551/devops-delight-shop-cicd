@@ -47,6 +47,15 @@ pipeline {
       }
     }
 
+    stage('OWASP Dependency-Check') {
+      steps {
+        withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
+          dependencyCheck additionalArguments: "--nvdApiKey ${NVD_API_KEY} --scan ./ --format HTML --format XML", odcInstallation: 'OWASP-DepCheck'
+        }
+        dependencyCheckPublisher pattern: 'dependency-check-report.xml'
+      }
+    }
+
     stage('NPM Audit (non-blocking)') {
       steps {
         sh '''
@@ -90,9 +99,6 @@ pipeline {
     }
 
     stage('Docker Build & Push (main only)') {
-      when {
-        branch 'main'
-      }
       steps {
         script {
           def fullImage = "${DOCKERHUB_USERNAME}/${APP_NAME}"
