@@ -1,6 +1,5 @@
 pipeline {
   agent any
-
   environment {
     DOCKERHUB_USERNAME = 'hahaha555'
     APP_NAME          = 'devops-delight-shop'
@@ -123,7 +122,9 @@ pipeline {
           echo "Initiating OWASP ZAP Dynamic Vulnerability Scan on ${targetUrl}..."
           
           sh """
-            docker run --rm -u root ghcr.io/zaproxy/zaproxy:stable bash -c "mkdir -p /zap/wrk && /zap/zap-baseline.py -t ${targetUrl} -I"
+            docker run --rm -v /zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+              -t ${targetUrl} \
+              -I
           """
         }
       }
