@@ -123,13 +123,11 @@ pipeline {
           echo "Initiating OWASP ZAP Dynamic Vulnerability Scan on ${targetUrl}..."
           
           sh """
-            docker run --rm ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
-              -t ${targetUrl} \
-              -I
+            docker run --rm -u root ghcr.io/zaproxy/zaproxy:stable bash -c "mkdir -p /zap/wrk && /zap/zap-baseline.py -t ${targetUrl} -I"
           """
         }
       }
-    }
+    } 
   }
 
   post {
