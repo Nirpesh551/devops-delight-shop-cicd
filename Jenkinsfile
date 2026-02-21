@@ -131,10 +131,16 @@ pipeline {
     } 
   }
 
-  post {
+ post {
     always {
       echo "Build completed: ${currentBuild.currentResult}"
       archiveArtifacts artifacts: 'coverage/**', allowEmptyArchive: true
     }
-  }
+    success {
+      slackSend(color: 'good', message: "✅ SUCCESS: The 'devops-delight-shop' deployment passed all quality and security gates! \nBuild details: ${env.BUILD_URL}")
+    }
+    failure {
+      slackSend(color: 'danger', message: "❌ FAILED: The deployment pipeline broke. \nCheck the logs here: ${env.BUILD_URL}")
+    }
+  } 
 }
