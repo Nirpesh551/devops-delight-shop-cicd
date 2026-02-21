@@ -111,6 +111,25 @@ pipeline {
         }
       }
     }
+
+    stage('DAST (OWASP ZAP)') {
+      steps {
+        script {
+          def targetUrl = "http://100.65.215.118" 
+          
+          echo "Waiting for ArgoCD to apply the latest deployment..."
+          sleep time: 30, unit: 'SECONDS'
+          
+          echo "Initiating OWASP ZAP Dynamic Vulnerability Scan on ${targetUrl}..."
+          
+          sh """
+            docker run --rm ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+              -t ${targetUrl} \
+              -I
+          """
+        }
+      }
+    }
   }
 
   post {
