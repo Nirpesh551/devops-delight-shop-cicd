@@ -115,20 +115,23 @@ pipeline {
       steps {
         script {
           withCredentials([usernamePassword(credentialsId: 'github-creds', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-            sh """
+            
+            sh '''
+              git config user.email "jenkins@devops-delight.com"
+              git config user.name "Jenkins Automation"
+              
+              git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/Nirpesh551/devops-delight-shop-cicd.git
+              
               git checkout main
               git pull origin main
               
               sed -i "s|image: hahaha555/devops-delight-shop:.*|image: hahaha555/devops-delight-shop:${IMAGE_TAG}|g" k8s/deployment.yaml
               
-              git config user.email "jenkins@devops-delight.com"
-              git config user.name "Jenkins Automation"
-              
               git add k8s/deployment.yaml
-              
               git commit -m "ci: update image tag to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"
-              git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/Nirpesh551/devops-delight-shop-cicd.git HEAD:main
-            """
+              
+              git push origin main
+            '''
           }
         }
       }
