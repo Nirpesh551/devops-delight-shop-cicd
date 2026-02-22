@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: frontend-app
-        image: hahaha555/devops-delight-shop:39
+        image: hahaha555/devops-delight-shop:41
         imagePullPolicy: Always
         ports:
         - containerPort: 80
