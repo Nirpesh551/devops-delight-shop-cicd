@@ -111,6 +111,23 @@ pipeline {
       }
     }
 
+    stage('Container Image Scan (Trivy)') {
+      steps {
+        script {
+          def fullImage = "${DOCKERHUB_USERNAME}/${APP_NAME}"
+          
+          echo "Initiating Trivy vulnerability scanner on ${fullImage}:${IMAGE_TAG}..."
+          
+          sh """
+            docker run --rm aquasec/trivy image \
+              --severity HIGH,CRITICAL \
+              --no-progress \
+              ${fullImage}:${IMAGE_TAG}
+          """
+        }
+      }
+    }
+
     stage('Update K8s Manifest (GitOps)') {
       steps {
         script {
