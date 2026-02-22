@@ -12,7 +12,9 @@ pipeline {
 
   options {
     timestamps()
+    ansiColor('xterm') 
     disableConcurrentBuilds()
+    buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '10'))
   }
 
   stages {
@@ -101,13 +103,12 @@ pipeline {
         echo "Scanning Dockerfile and Kubernetes manifests for misconfigurations..."
         sh '''
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b .
-          
+
           ./trivy config --exit-code 0 --severity HIGH,CRITICAL ./k8s
-          
           ./trivy config --exit-code 0 --severity HIGH,CRITICAL ./Dockerfile
         '''
       }
-    } 
+    }
 
     stage('Docker Build & Push (main only)') {
       steps {
@@ -146,7 +147,7 @@ pipeline {
       steps {
         script {
           slackSend(color: 'warning', message: "⏳ WAITING: Build #${env.BUILD_NUMBER} passed all DevSecOps scans and is ready for Production. \nPlease approve here: ${env.BUILD_URL}")
-          
+
           timeout(time: 1, unit: 'HOURS') {
             input message: 'Deploy to Production via GitOps?', ok: 'Approve & Deploy'
           }
@@ -162,14 +163,14 @@ pipeline {
             sh '''
               git config user.email "jenkins@devops-delight.com"
               git config user.name "Jenkins Automation"
-              
+
               git remote set-url origin "https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/Nirpesh551/devops-delight-shop-cicd.git"
-              
+
               git checkout main
               git pull origin main
-              
+
               sed -i "s|image: hahaha555/devops-delight-shop:.*|image: hahaha555/devops-delight-shop:${IMAGE_TAG}|g" k8s/deployment.yaml
-              
+
               git add k8s/deployment.yaml
               git commit -m "ci: update image tag to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"
               git push origin main
@@ -203,6 +204,8 @@ pipeline {
     always {
       echo "Build completed: ${currentBuild.currentResult}"
       archiveArtifacts artifacts: 'coverage/**', allowEmptyArchive: true
+      
+      cleanWs(deleteDirs: true, disableDeferredWipeout: true) 
     }
     success {
       slackSend(color: 'good', message: "✅ SUCCESS: The 'devops-delight-shop' deployment passed all quality and security gates! \nBuild details: ${env.BUILD_URL}")
