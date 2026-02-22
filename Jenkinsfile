@@ -102,10 +102,12 @@ pipeline {
         sh '''
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b .
           
-          ./trivy config --exit-code 0 --severity HIGH,CRITICAL ./k8s ./Dockerfile
+          ./trivy config --exit-code 0 --severity HIGH,CRITICAL ./k8s
+          
+          ./trivy config --exit-code 0 --severity HIGH,CRITICAL ./Dockerfile
         '''
       }
-    }
+    } 
 
     stage('Docker Build & Push (main only)') {
       steps {
@@ -140,7 +142,6 @@ pipeline {
       }
     }
 
-    // --- NEW ENTERPRISE STAGE 2: MANUAL APPROVAL GATE ---
     stage('Production Approval Gate') {
       steps {
         script {
