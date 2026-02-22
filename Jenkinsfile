@@ -111,16 +111,39 @@ pipeline {
       }
     }
 
+    stage('Update K8s Manifest (GitOps)') {
+      steps {
+        script {
+          withCredentials([usernamePassword(credentialsId: 'github-creds', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+            sh """
+              git checkout main
+              git pull origin main
+              
+              sed -i "s|image: hahaha555/devops-delight-shop:.*|image: hahaha555/devops-delight-shop:${IMAGE_TAG}|g" k8s/deployment.yaml
+              
+              git config user.email "jenkins@devops-delight.com"
+              git config user.name "Jenkins Automation"
+              
+              git add k8s/deployment.yaml
+              
+              git commit -m "ci: update image tag to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"
+              git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/Nirpesh551/devops-delight-shop-cicd.git HEAD:main
+            """
+          }
+        }
+      }
+    }
+
     stage('DAST (OWASP ZAP)') {
       steps {
         script {
-          def targetUrl = "http://100.65.215.118" 
-          
-          echo "Waiting for ArgoCD to apply the latest deployment..."
-          sleep time: 30, unit: 'SECONDS'
-          
+          def targetUrl = "http://100.65.215.118"
+
+          echo "Waiting 3 minutes for ArgoCD to apply the latest deployment..."
+          sleep time: 180, unit: 'SECONDS'
+
           echo "Initiating OWASP ZAP Dynamic Vulnerability Scan on ${targetUrl}..."
-          
+
           sh """
             docker run --rm -u root -v /zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
               -t ${targetUrl} \
@@ -128,10 +151,10 @@ pipeline {
           """
         }
       }
-    } 
+    }
   }
 
- post {
+  post {
     always {
       echo "Build completed: ${currentBuild.currentResult}"
       archiveArtifacts artifacts: 'coverage/**', allowEmptyArchive: true
@@ -142,5 +165,5 @@ pipeline {
     failure {
       slackSend(color: 'danger', message: "❌ FAILED: The deployment pipeline broke. \nCheck the logs here: ${env.BUILD_URL}")
     }
-  } 
+  }
 }
