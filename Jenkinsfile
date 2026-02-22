@@ -41,7 +41,6 @@ pipeline {
           set -euxo pipefail
           npm run test:cov
           test -f coverage/lcov.info
-          ls -lah coverage/lcov.info
         '''
       }
     }
@@ -97,6 +96,17 @@ pipeline {
       }
     }
 
+    stage('Infrastructure Security Scan (IaC)') {
+      steps {
+        echo "Scanning Dockerfile and Kubernetes manifests for misconfigurations..."
+        sh '''
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b .
+          
+          ./trivy config --exit-code 0 --severity HIGH,CRITICAL ./k8s ./Dockerfile
+        '''
+      }
+    }
+
     stage('Docker Build & Push (main only)') {
       steps {
         script {
@@ -115,9 +125,7 @@ pipeline {
       steps {
         script {
           echo "Initiating Trivy vulnerability scanner..."
-          
           withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', passwordVariable: 'TRIVY_PASSWORD', usernameVariable: 'TRIVY_USERNAME')]) {
-            
             sh '''
               docker run --rm \
                 -e TRIVY_USERNAME="${TRIVY_USERNAME}" \
@@ -130,13 +138,26 @@ pipeline {
           }
         }
       }
-    } 
+    }
+
+    // --- NEW ENTERPRISE STAGE 2: MANUAL APPROVAL GATE ---
+    stage('Production Approval Gate') {
+      steps {
+        script {
+          slackSend(color: 'warning', message: "⏳ WAITING: Build #${env.BUILD_NUMBER} passed all DevSecOps scans and is ready for Production. \nPlease approve here: ${env.BUILD_URL}")
+          
+          timeout(time: 1, unit: 'HOURS') {
+            input message: 'Deploy to Production via GitOps?', ok: 'Approve & Deploy'
+          }
+          echo "Approval granted! Proceeding with GitOps deployment..."
+        }
+      }
+    }
 
     stage('Update K8s Manifest (GitOps)') {
       steps {
         script {
           withCredentials([usernamePassword(credentialsId: 'github-creds', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-            
             sh '''
               git config user.email "jenkins@devops-delight.com"
               git config user.name "Jenkins Automation"
@@ -155,7 +176,7 @@ pipeline {
           }
         }
       }
-    } 
+    }
 
     stage('DAST (OWASP ZAP)') {
       steps {
@@ -186,7 +207,7 @@ pipeline {
       slackSend(color: 'good', message: "✅ SUCCESS: The 'devops-delight-shop' deployment passed all quality and security gates! \nBuild details: ${env.BUILD_URL}")
     }
     failure {
-      slackSend(color: 'danger', message: "❌ FAILED: The deployment pipeline broke. \nCheck the logs here: ${env.BUILD_URL}")
+      slackSend(color: 'danger', message: "❌ FAILED: The deployment pipeline broke or was rejected. \nCheck the logs here: ${env.BUILD_URL}")
     }
   }
 }
