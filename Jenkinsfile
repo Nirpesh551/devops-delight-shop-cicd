@@ -120,7 +120,7 @@ pipeline {
               git config user.email "jenkins@devops-delight.com"
               git config user.name "Jenkins Automation"
               
-              git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/Nirpesh551/devops-delight-shop-cicd.git
+              git remote set-url origin "https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/Nirpesh551/devops-delight-shop-cicd.git"
               
               git checkout main
               git pull origin main
@@ -129,13 +129,12 @@ pipeline {
               
               git add k8s/deployment.yaml
               git commit -m "ci: update image tag to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"
-              
               git push origin main
             '''
           }
         }
       }
-    }
+    } 
 
     stage('DAST (OWASP ZAP)') {
       steps {
