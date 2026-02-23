@@ -14,7 +14,7 @@ By implementing **Shift-Left security**, **Pull-based GitOps**, and **ChatOps**,
 
 ## 🏛️ Architecture & Tech Stack
 
-![Architecture Diagram](assets/architecture_diagram.png)
+![Architecture Diagram](assets/architecture_diagram.png.png)
 
 This project leverages a hybrid-cloud and multi-tool architecture:
 * **Cloud Infrastructure:** Azure (Jenkins Master Node) & Oracle Cloud (Production K3s Cluster)
