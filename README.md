@@ -1,11 +1,12 @@
-# 🛡️ Enterprise DevSecOps & GitOps Pipeline
+# 🛡️ Enterprise DevSecOps & Multi-Cloud GitOps Pipeline
 
-> **Bridging the gap between rapid delivery and uncompromising security.** > A fully automated, zero-downtime Continuous Integration and Continuous Deployment (CI/CD) pipeline built to enterprise standards.
+> **Bridging the gap between rapid delivery and uncompromising security.** <br>
+> A fully automated, zero-downtime Continuous Integration and Continuous Deployment (CI/CD) pipeline built to enterprise standards.
 
 ![Complete Jenkins Pipeline](assets/jenkins.png)
 
 ## 📌 The Project Vision
-In modern cloud-native environments, pushing code quickly isn't enough; it must be secure by design. The goal of this project was to design a production-grade DevSecOps lifecycle that deploys a modern web application (a React Single Page Application backed by a Supabase BaaS) to a Kubernetes cluster. 
+In modern cloud-native environments, pushing code quickly isn't enough; it must be secure by design. The goal of this project was to design a production-grade DevSecOps lifecycle that deploys a modern React Single Page Application (backed by a Supabase BaaS) to a Kubernetes cluster. 
 
 By implementing **Shift-Left security**, **Pull-based GitOps**, and **ChatOps**, this pipeline ensures that vulnerabilities are caught before they reach production, deployments are immutable, and the engineering team is always in the loop.
 
@@ -13,8 +14,10 @@ By implementing **Shift-Left security**, **Pull-based GitOps**, and **ChatOps**,
 
 ## 🏛️ Architecture & Tech Stack
 
+![Architecture Diagram](assets/architecture_diagram.png)
+
 This project leverages a hybrid-cloud and multi-tool architecture:
-* **Infrastructure:** Azure (Jenkins Master Node) & Oracle Cloud (Kubernetes Cluster)
+* **Cloud Infrastructure:** Azure (Jenkins Master Node) & Oracle Cloud (Production K3s Cluster)
 * **CI/CD Orchestration:** Jenkins (Declarative Pipeline with Groovy)
 * **Continuous Delivery (GitOps):** ArgoCD
 * **Containerization:** Docker & Docker Hub
@@ -38,18 +41,17 @@ The moment code is pushed to the repository, Jenkins triggers the build. Before 
 Security isn't an afterthought; it happens before the image is even built.
 * **OWASP Dependency-Check:** Scans all third-party NPM packages against the National Vulnerability Database (NVD) to prevent supply chain attacks.
 ![Dependency Check Results](assets/dependencycheckresults.png)
-* **Trivy IaC Scan:** Analyzes the `Dockerfile` and `k8s/` deployment manifests to catch misconfigurations (like running containers as root) early.
+* **Trivy IaC & Container Scan:** Analyzes the `Dockerfile` and `k8s/` deployment manifests to catch misconfigurations. Once built, a temporary Trivy container scans the fresh Docker image for `HIGH` and `CRITICAL` OS-level CVEs.
+![Trivy Security Scan](assets/trivy.png)
 
 ### Phase 3: Secure Containerization
-Once the code and configurations pass the gates, the application is containerized.
-* **Trivy Image Scan:** A temporary Trivy container is spun up to scan the freshly built Docker image for `HIGH` and `CRITICAL` OS-level CVEs.
-![Trivy Security Scan](assets/trivy.png)
+Once the code and configurations pass the gates, the application is packaged.
 * **Artifact Registry:** The secure image is tagged dynamically with the Jenkins build number and pushed to Docker Hub.
 ![Docker Hub Registry](assets/dockerhub.png)
 
 ### Phase 4: The GitOps Handoff
 This pipeline avoids the anti-pattern of letting the CI server push directly to the Kubernetes cluster. 
-* **Automated Manifest Updates:** Jenkins uses `sed` to dynamically update the `deployment.yaml` with the new image tag, commits the change, and pushes it back to GitHub using securely injected credentials.
+* **Automated Manifest Updates:** Jenkins dynamically updates the `deployment.yaml` with the new image tag and pushes the commit back to GitHub using securely injected credentials.
 ![GitHub GitOps Automation](assets/github_automation.png)
 
 ### Phase 5: Human-in-the-Loop & ChatOps
@@ -73,8 +75,8 @@ Even with secure code, runtime misconfigurations can happen.
 
 ---
 
-## 🌟 The Final Result
-A highly available, secure, and fully automated application deployment. 
+## 🌟 The Final Result & Business Value
+A highly available, secure, and fully automated application deployment.
 ![Live Application Demo](assets/devopsshop_demo_pic.png)
 
 ### Key Engineering Decisions
