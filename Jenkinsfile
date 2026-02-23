@@ -182,7 +182,7 @@ pipeline {
     stage('DAST (OWASP ZAP)') {
       steps {
         script {
-          def targetUrl = "http://100.65.215.118"
+          def targetUrl = "http://target..."
 
           echo "Waiting 3 minutes for ArgoCD to apply the latest deployment..."
           sleep time: 180, unit: 'SECONDS'
