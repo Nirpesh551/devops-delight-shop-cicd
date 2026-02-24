@@ -25,3 +25,11 @@ dist-ssr
 *.sln
 *.sw?
 coverage/
+
+.env
+.env.local
+.env.*.local
+
+supabase/.branches
+supabase/.temp
+supabase/
